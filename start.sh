@@ -9,8 +9,7 @@ streamlit run news-rag/frontend/streamlit_app.py \
     --server.address=0.0.0.0 \
     --server.headless=true \
     --server.enableCORS=false \
-    --server.enableXsrfProtection=false \
-    --server.baseUrlPath=/ &
+    --server.enableXsrfProtection=false &
 streamlit_pid=$!
 
 cleanup() {
