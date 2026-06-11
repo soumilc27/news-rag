@@ -1,21 +1,51 @@
 """
-LLM summarizer for NewsRAG using Ollama (qwen2.5:7b-instruct).
+LLM summarizer for NewsRAG using Ollama (self-hosted or Ollama Cloud).
 Falls back to a rule-based summary if Ollama is unavailable.
 """
+import os
 from typing import List, Dict, Optional
 from loguru import logger
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from llm.prompt_builder import build_summarization_prompt, build_system_prompt
 
-OLLAMA_MODEL = "qwen2.5:7b-instruct"
-OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b-instruct")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
+
+
+def _is_cloud() -> bool:
+    return "ollama.com" in OLLAMA_BASE_URL or OLLAMA_BASE_URL.startswith("https://")
+
+
+def _get_headers() -> Dict[str, str]:
+    headers: Dict[str, str] = {"Content-Type": "application/json"}
+    if OLLAMA_API_KEY:
+        headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
+    return headers
 
 
 def _check_ollama() -> bool:
-    """Check if Ollama is running locally."""
+    """Check if Ollama is reachable at the configured base URL."""
     try:
         import httpx
-        resp = httpx.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=3)
+        if _is_cloud():
+            resp = httpx.get(
+                f"{OLLAMA_BASE_URL}/models",
+                headers=_get_headers(),
+                timeout=5,
+            )
+            return resp.status_code == 200
+        resp = httpx.get(
+            f"{OLLAMA_BASE_URL}/api/tags",
+            headers=_get_headers(),
+            timeout=5,
+        )
         return resp.status_code == 200
     except Exception:
         return False
@@ -24,19 +54,43 @@ def _check_ollama() -> bool:
 def summarize_with_ollama(query: str, articles: List[Dict]) -> Optional[str]:
     """Call Ollama to generate a summary."""
     try:
-        import ollama
+        import httpx
         prompt = build_summarization_prompt(query, articles)
         if not prompt:
             return None
 
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[
-                {"role": "system", "content": build_system_prompt()},
-                {"role": "user", "content": prompt},
-            ],
+        if _is_cloud():
+            endpoint = f"{OLLAMA_BASE_URL}/chat/completions"
+            body = {
+                "model": OLLAMA_MODEL,
+                "messages": [
+                    {"role": "system", "content": build_system_prompt()},
+                    {"role": "user", "content": prompt},
+                ],
+            }
+        else:
+            endpoint = f"{OLLAMA_BASE_URL}/api/chat"
+            body = {
+                "model": OLLAMA_MODEL,
+                "messages": [
+                    {"role": "system", "content": build_system_prompt()},
+                    {"role": "user", "content": prompt},
+                ],
+                "stream": False,
+            }
+
+        resp = httpx.post(
+            endpoint,
+            headers=_get_headers(),
+            json=body,
+            timeout=120,
         )
-        return response["message"]["content"]
+        resp.raise_for_status()
+        data = resp.json()
+
+        if _is_cloud():
+            return data.get("choices", [{}])[0].get("message", {}).get("content")
+        return data.get("message", {}).get("content")
     except Exception as e:
         logger.warning(f"Ollama summarization failed: {e}")
         return None
