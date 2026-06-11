@@ -4,8 +4,8 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     SENTENCE_TRANSFORMERS_HOME=/tmp/sentence_transformers \
     CHROMA_DB_PATH=/tmp/chroma_db \
-    OLLAMA_MODEL=gemma3:27b
-    OLLAMA_BASE_URL=https://ollama.com/v1
+    OLLAMA_MODEL=qwen2.5:7b-instruct \
+    OLLAMA_BASE_URL=http://localhost:11434
 
 WORKDIR /app
 
