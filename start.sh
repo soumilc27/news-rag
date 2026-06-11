@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd /app/news-rag
+
 uvicorn news-rag.api.main:app --host 0.0.0.0 --port 8000 &
 uvicorn_pid=$!
 
-streamlit run news-rag/frontend/streamlit_app.py \
+streamlit run frontend/streamlit_app.py \
     --server.port=10000 \
     --server.address=0.0.0.0 \
     --server.headless=true \
