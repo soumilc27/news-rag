@@ -15,7 +15,8 @@ HEADERS = {
         "Chrome/120.0.0.0 Safari/537.36"
     )
 }
-REQUEST_TIMEOUT = 10
+REQUEST_TIMEOUT = 8
+MAX_CONTENT_LENGTH = 3000
 
 
 def fetch_url(url: str) -> Optional[str]:
@@ -24,8 +25,7 @@ def fetch_url(url: str) -> Optional[str]:
         resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
         return resp.text
-    except Exception as e:
-        logger.debug(f"Failed to fetch {url}: {e}")
+    except Exception:
         return None
 
 
@@ -44,27 +44,16 @@ def extract_content(url: str) -> Optional[str]:
             include_comments=False,
             include_tables=False,
             no_fallback=False,
+            max_text_size=MAX_CONTENT_LENGTH,
         )
         return content
-    except Exception as e:
-        logger.debug(f"Trafilatura extraction failed for {url}: {e}")
+    except Exception:
         return None
 
 
 def enrich_article(article: dict) -> dict:
     """
-    Attempt to replace/enhance article content with full extracted text.
-    Falls back to existing content (RSS summary) if extraction fails.
+    Skip full-text enrichment — too slow on hosted environments.
+    RSS feed summaries are sufficient for search and summarization.
     """
-    url = article.get("url", "")
-    if not url:
-        return article
-
-    full_content = extract_content(url)
-    if full_content and len(full_content) > len(article.get("content", "")):
-        article["content"] = full_content
-        logger.debug(f"Enriched content for: {article['title'][:50]}")
-    else:
-        logger.debug(f"Using RSS summary for: {article['title'][:50]}")
-
     return article

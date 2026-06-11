@@ -10,7 +10,9 @@ from chromadb.config import Settings
 
 from embeddings.embedder import embed_text, build_article_text
 
-CHROMA_PATH = "./chroma_db"
+import os
+
+CHROMA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "chroma_db")
 COLLECTION_NAME = "news_articles"
 
 _client = None

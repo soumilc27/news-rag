@@ -2,10 +2,13 @@
 RSS feed fetcher for NewsRAG.
 Fetches articles from configured RSS sources.
 """
+import socket
 import feedparser
 from datetime import datetime
 from typing import List, Dict, Optional
 from loguru import logger
+
+socket.setdefaulttimeout(15)
 
 from ingestion.sources import RSS_SOURCES
 

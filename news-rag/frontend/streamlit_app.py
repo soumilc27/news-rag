@@ -834,7 +834,7 @@ with right_col:
 
     # Ingest button
     if st.button("🔄  Fetch Latest News", key="ingest_btn"):
-        with st.spinner("Ingesting news..."):
+        with st.spinner("Ingesting news... this may take a minute."):
             try:
                 from scheduler.update_news import run_ingestion_pipeline
                 result = run_ingestion_pipeline()
