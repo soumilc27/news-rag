@@ -5,6 +5,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+COPY start.sh ./
+RUN chmod +x start.sh
+
 COPY news-rag/requirements.txt ./requirements.txt
 
 RUN pip install --no-cache-dir -r requirements.txt
@@ -15,4 +18,4 @@ ENV PYTHONPATH=/app
 
 EXPOSE 8000 8501
 
-CMD ["bash", "start.sh"]
+CMD ["bash", "./start.sh"]
