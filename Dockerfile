@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY news-rag/ ./
 
+
 ENV PYTHONPATH=/app
 
 EXPOSE 8501
