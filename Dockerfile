@@ -21,7 +21,7 @@ COPY news-rag/ ./
 
 ENV PYTHONPATH=/app
 
-EXPOSE 10000
+EXPOSE 8501
 EXPOSE 8000
 
 CMD ["bash", "./start.sh"]
