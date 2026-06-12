@@ -47,19 +47,17 @@ class SearchRequest(BaseModel):
 
 
 @app.get("/")
-def root():
-    """Serve Streamlit UI via an iframe.
-    This embeds the internal Streamlit server so the public URL shows the UI.
+async def root():
+    """Proxy the Streamlit UI.
+    The FastAPI process fetches the HTML from the internal Streamlit server
+    (running on 127.0.0.1:8501) and returns it directly to the client.
+    This avoids the “127.0.0.1 refused to connect” error that occurs with an iframe.
     """
-    iframe_html = """
-    <style>
-        html, body {margin:0;height:100%;overflow:hidden;background:#0d1117;}
-        iframe {border:none;width:100%;height:100vh;}
-    </style>
-    <iframe src='http://127.0.0.1:8501' sandbox='allow-scripts allow-same-origin'></iframe>
-    """
-    return HTMLResponse(content=iframe_html, status_code=200)
-
+    async with httpx.AsyncClient() as client:
+        resp = await client.get("http://127.0.0.1:8501")
+        return HTMLResponse(content=resp.content,
+                            status_code=resp.status_code,
+                            headers=resp.headers)
 
 
 @app.get("/health")
