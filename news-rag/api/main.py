@@ -7,6 +7,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, Query, HTTPException, BackgroundTasks
+from fastapi.responses import HTMLResponse
+import httpx
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
@@ -45,8 +47,14 @@ class SearchRequest(BaseModel):
 
 
 @app.get("/")
-def root():
-    return {"status": "ok", "service": "NewsRAG API"}
+async def root():
+    """Proxy the root path to the Streamlit UI.
+    This makes https://eznews.onrender.com/ serve the Streamlit interface while still exposing the API.
+    """
+    async with httpx.AsyncClient() as client:
+        resp = await client.get("http://127.0.0.1:8501")
+        return HTMLResponse(content=resp.content, status_code=resp.status_code, headers=resp.headers)
+
 
 
 @app.get("/health")
