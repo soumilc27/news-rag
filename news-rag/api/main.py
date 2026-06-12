@@ -49,15 +49,25 @@ class SearchRequest(BaseModel):
 @app.get("/")
 async def root():
     """Proxy the Streamlit UI.
-    The FastAPI process fetches the HTML from the internal Streamlit server
-    (running on 127.0.0.1:8501) and returns it directly to the client.
-    This avoids the “127.0.0.1 refused to connect” error that occurs with an iframe.
+    Tries to fetch the Streamlit HTML from the internal server (0.0.0.0:8501).
+    If the UI is not yet ready, returns a minimal placeholder with a refresh.
     """
-    async with httpx.AsyncClient() as client:
-        resp = await client.get("http://127.0.0.1:8501")
-        return HTMLResponse(content=resp.content,
-                            status_code=resp.status_code,
-                            headers=resp.headers)
+    url = "http://0.0.0.0:8501"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(url)
+            return HTMLResponse(content=resp.content,
+                                status_code=resp.status_code,
+                                headers=resp.headers)
+    except Exception as exc:
+        # UI not available yet – render a simple page that refreshes every 2 seconds
+        placeholder = f"""
+        <html><head><meta http-equiv='refresh' content='2'>
+        <style>body{{background:#0d1117;color:#c9d1d9;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Inter,sans-serif;}}</style>
+        <title>Loading UI…</title></head>
+        <body><h3>Starting Streamlit UI… ({exc})</h3></body></html>
+        """
+        return HTMLResponse(content=placeholder, status_code=200)
 
 
 @app.get("/health")
