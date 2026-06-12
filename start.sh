@@ -7,7 +7,7 @@ uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000} &
 uvicorn_pid=$!
 
 streamlit run frontend/streamlit_app.py \
-    --server.port=10000 \
+    --server.port=8501 \
     --server.address=0.0.0.0 \
     --server.headless=true \
     --server.enableCORS=false \
